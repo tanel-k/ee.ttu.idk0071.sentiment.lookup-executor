@@ -6,9 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.amqp.messages.LookupRequestMessage;
-import ee.ttu.idk0071.sentiment.lib.analysis.SentimentAnalyzer;
-import ee.ttu.idk0071.sentiment.lib.analysis.impl.BasicSentimentAnalyzer;
-import ee.ttu.idk0071.sentiment.lib.analysis.objects.PageSentiment;
+import ee.ttu.idk0071.sentiment.lib.analysis.impl.WebsiteAnalyzer;
+import ee.ttu.idk0071.sentiment.lib.analysis.objects.SentimentResult;
 import ee.ttu.idk0071.sentiment.lib.scraping.SearchEngineScraper;
 import ee.ttu.idk0071.sentiment.lib.scraping.impl.GoogleScraper;
 import ee.ttu.idk0071.sentiment.lib.scraping.objects.SearchEngineQuery;
@@ -53,11 +52,11 @@ public class LookupExecutor {
 				SearchEngineQuery query = new SearchEngineQuery(queryString, 10);
 				List<SearchEngineResult> searchLinks = scraper.search(query);
 				
-				SentimentAnalyzer analyzer = new BasicSentimentAnalyzer(500);
+				WebsiteAnalyzer analyzer = new WebsiteAnalyzer(500);
 				
 				for (SearchEngineResult searchLink : searchLinks) {
 					try {
-						PageSentiment sentiment = analyzer.analyzePage(searchLink.getUrl());
+						SentimentResult sentiment = analyzer.analyze(searchLink.getUrl());
 						
 						SentimentSnapshot snapshot = new SentimentSnapshot();
 						snapshot.setSource(searchLink.getUrl());
