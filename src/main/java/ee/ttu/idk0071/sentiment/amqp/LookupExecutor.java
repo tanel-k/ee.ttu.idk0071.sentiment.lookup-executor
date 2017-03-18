@@ -52,7 +52,6 @@ public class LookupExecutor {
 		List<SearchEngineResult> searchLinks = scraper.search(query);
 		
 		float neuCnt = 0, posCnt = 0, negCnt = 0;
-		Integer rankNr = 1;
 		SentimentAnalyzer analyzer = new BasicSentimentAnalyzer(500);
 		LookupDomain lookupDomain = lookupDomainRepository.findByName("Google");
 		
@@ -61,7 +60,6 @@ public class LookupExecutor {
 				PageSentiment sentiment = analyzer.analyzePage(searchLink.getUrl());
 				
 				SentimentSnapshot snapshot = new SentimentSnapshot();
-				snapshot.setRank(rankNr++);
 				snapshot.setTitle(searchLink.getTitle());
 				snapshot.setUrl(searchLink.getUrl());
 				snapshot.setTrustLevel(sentiment.getTrustLevel());
