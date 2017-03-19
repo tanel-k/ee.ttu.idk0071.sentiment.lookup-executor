@@ -5,7 +5,6 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,8 +12,8 @@ import org.springframework.context.annotation.Configuration;
 public class LookupExecutorConfiguration extends MessageConfiguration {
 	protected final String lookupQueue = "lookup-request-queue";
 
-	@Autowired
-	private LookupExecutor lookupExecutor;
+//	@Autowired
+//	private LookupExecutor lookupExecutor;
 
 	@Bean
 	public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
@@ -41,6 +40,7 @@ public class LookupExecutorConfiguration extends MessageConfiguration {
 
 	@Bean
 	public MessageListenerAdapter messageListenerAdapter() {
-		return new MessageListenerAdapter(lookupExecutor, jsonMessageConverter());
+		// testing
+		return new MessageListenerAdapter(LookupExecutor.class, jsonMessageConverter());
 	}
 }

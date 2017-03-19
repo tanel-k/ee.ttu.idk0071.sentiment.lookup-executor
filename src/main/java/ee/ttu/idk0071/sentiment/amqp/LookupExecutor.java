@@ -16,11 +16,10 @@ import ee.ttu.idk0071.sentiment.model.Domain;
 import ee.ttu.idk0071.sentiment.model.DomainLookup;
 import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
-import ee.ttu.idk0071.sentiment.model.SentimentSnapshot;
 import ee.ttu.idk0071.sentiment.model.SentimentType;
+import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.LookupRepository;
 import ee.ttu.idk0071.sentiment.repository.LookupStateRepository;
-import ee.ttu.idk0071.sentiment.repository.SentimentSnapshotRepository;
 import ee.ttu.idk0071.sentiment.repository.SentimentTypeRepository;
 
 @Component
@@ -30,9 +29,9 @@ public class LookupExecutor {
 	@Autowired
 	private LookupStateRepository lookupStateRepository;
 	@Autowired
-	private SentimentTypeRepository sentimentTypeRepository;
+	private DomainLookupRepository domainLookupRepository;
 	@Autowired
-	private SentimentSnapshotRepository sentimentSnapshotRepository;
+	private SentimentTypeRepository sentimentTypeRepository;
 
 	public void handleMessage(LookupRequestMessage lookupRequest) {
 		Lookup lookup = lookupRepository.findOne(lookupRequest.getLookupId());
@@ -47,6 +46,9 @@ public class LookupExecutor {
 		
 		for (DomainLookup domainLookup : lookup.getDomainLookups()) {
 			Domain domain = domainLookup.getDomain();
+			long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
+			double neutralQty = 0, positiveQty = 0, negativeQty = 0;
+			
 			if ("Google".equals(domain.getName())) {
 				
 				SearchEngineQuery query = new SearchEngineQuery(queryString, 10);
@@ -56,54 +58,52 @@ public class LookupExecutor {
 				
 				for (SearchEngineResult searchLink : searchLinks) {
 					try {
-						SentimentResult sentiment = analyzer.analyze(searchLink.getUrl());
+						SentimentResult analysisResult = analyzer.analyze(searchLink.getUrl());
+						double trustLevel = analysisResult.getTrustLevel();
 						
-						SentimentSnapshot snapshot = new SentimentSnapshot();
-						snapshot.setSource(searchLink.getUrl());
-						snapshot.setTrustLevel(sentiment.getTrustLevel());
-						snapshot.setDomainLookup(domainLookup);
-						
-						SentimentType pageSentimentType = null;
-						switch (sentiment.getSentimentType()) {
+						switch (analysisResult.getSentimentType()) {
 							case NEUTRAL:
-								pageSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEUTRAL);
+								neutralCnt++;
+								neutralQty += trustLevel;
 								break;
 							case POSITIVE:
-								pageSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_POSITIVE);
+								positiveCnt++;
+								positiveQty += trustLevel;
 								break;
 							case NEGATIVE:
-								pageSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEGATIVE);
+								negativeCnt++;
+								negativeQty += trustLevel;
 								break;
 							default:
 								break;
 						}
-						
-						snapshot.setSentimentType(pageSentimentType);
-						sentimentSnapshotRepository.save(snapshot);
 					} catch (Throwable t) {
 						continue;
 					}
 				}
-				
-				/*
-				SentimentType lookupSentimentType = null;
-				if (neuCnt >= posCnt) {
-					if (neuCnt >= negCnt) {
-						lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEUTRAL);
-					} else {
-						lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEGATIVE);
-					}
-				} else {
-					if (posCnt >= negCnt) {
-						lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_POSITIVE);
-					} else {
-						lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEGATIVE);
-					}
-				}
-				*/
-				
-				lookupRepository.save(lookup);
 			}
+			
+			SentimentType lookupSentimentType = null;
+			if (neutralCnt >= positiveCnt) {
+				if (neutralCnt >= negativeCnt) {
+					lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEUTRAL);
+				} else {
+					lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEGATIVE);
+				}
+			} else {
+				if (positiveCnt >= negativeCnt) {
+					lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_POSITIVE);
+				} else {
+					lookupSentimentType = sentimentTypeRepository.findOne(SentimentType.TYPE_CODE_NEGATIVE);
+				}
+			}
+			
+			domainLookup.setSentimentType(lookupSentimentType);
+			domainLookup.setCounts(negativeCnt, neutralCnt, positiveCnt);
+			domainLookup.setQuantities(negativeQty, neutralQty, positiveQty);
+			domainLookupRepository.save(domainLookup);
 		}
+		
+		lookupRepository.save(lookup);
 	}
 }
