@@ -6,7 +6,7 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import ee.ttu.idk0071.sentiment.amqp.messages.LookupRequestMessage;
+import ee.ttu.idk0071.sentiment.amqp.messages.DomainLookupRequestMessage;
 
 @Configuration
 public class MessageConfiguration {
@@ -21,7 +21,7 @@ public class MessageConfiguration {
 	@Bean
 	public DefaultClassMapper classMapper() {
 		DefaultClassMapper typeMapper = new DefaultClassMapper();
-		typeMapper.setDefaultType(LookupRequestMessage.class);
+		typeMapper.setDefaultType(DomainLookupRequestMessage.class);
 		return typeMapper;
 	}
 }
