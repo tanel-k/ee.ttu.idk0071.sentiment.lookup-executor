@@ -9,9 +9,11 @@ import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.amqp.messages.DomainLookupRequestMessage;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
+import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
 import ee.ttu.idk0071.sentiment.lib.analysis.impl.ViveknSentimentAnalyzer;
-import ee.ttu.idk0071.sentiment.lib.searching.api.Searcher;
-import ee.ttu.idk0071.sentiment.lib.searching.impl.GoogleSearcher;
+import ee.ttu.idk0071.sentiment.lib.searching.api.Fetcher;
+import ee.ttu.idk0071.sentiment.lib.searching.impl.GoogleFetcher;
+import ee.ttu.idk0071.sentiment.lib.searching.objects.FetchException;
 import ee.ttu.idk0071.sentiment.lib.searching.objects.Query;
 import ee.ttu.idk0071.sentiment.model.Domain;
 import ee.ttu.idk0071.sentiment.model.DomainLookup;
@@ -28,7 +30,7 @@ public class DomainLookupExecutor {
 	private DomainLookupRepository domainLookupRepository;
 
 	@Transactional
-	public void handleMessage(DomainLookupRequestMessage lookupRequest) {
+	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
 		DomainLookup domainLookup = domainLookupRepository.findOne(lookupRequest.getDomainLookupId());
 		Lookup lookup = domainLookup.getLookup();
 		LookupEntity lookupEntity = lookup.getLookupEntity();
@@ -41,9 +43,9 @@ public class DomainLookupExecutor {
 		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
 		
 		if ("Google".equals(domain.getName())) {
-			Searcher searcher = new GoogleSearcher();
+			Fetcher searcher = new GoogleFetcher();
 			Query query = new Query(queryString, 10L);
-			List<String> searchResults = searcher.search(query);
+			List<String> searchResults = searcher.fetch(query);
 			
 			SentimentAnalyzer analyzer = new ViveknSentimentAnalyzer();
 			
@@ -62,7 +64,7 @@ public class DomainLookupExecutor {
 						default:
 							break;
 					}
-				} catch (Throwable t) {
+				} catch (SentimentRetrievalException e) {
 					continue;
 				}
 			}
