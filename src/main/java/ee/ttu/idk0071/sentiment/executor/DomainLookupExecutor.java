@@ -1,4 +1,4 @@
-package ee.ttu.idk0071.sentiment.amqp;
+package ee.ttu.idk0071.sentiment.executor;
 
 import java.util.List;
 
@@ -11,7 +11,6 @@ import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
 import ee.ttu.idk0071.sentiment.lib.analysis.impl.ViveknSentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.fetching.api.Fetcher;
-import ee.ttu.idk0071.sentiment.lib.fetching.impl.GoogleFetcher;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.FetchException;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.Query;
 import ee.ttu.idk0071.sentiment.lib.messages.DomainLookupRequestMessage;
@@ -21,6 +20,7 @@ import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
+import ee.ttu.idk0071.sentiment.utils.FetcherFactory;
 
 @Component
 public class DomainLookupExecutor {
@@ -40,12 +40,12 @@ public class DomainLookupExecutor {
 		domainLookupRepository.save(domainLookup);
 		
 		Domain domain = domainLookup.getDomain();
-		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
+		Fetcher fetcher = FetcherFactory.getFetcher(domain);
 		
-		if ("Google".equals(domain.getName())) {
-			Fetcher searcher = new GoogleFetcher();
+		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
+		if (fetcher != null) {
 			Query query = new Query(queryString, 10L);
-			List<String> searchResults = searcher.fetch(query);
+			List<String> searchResults = fetcher.fetch(query);
 			
 			SentimentAnalyzer analyzer = new ViveknSentimentAnalyzer();
 			
@@ -68,6 +68,8 @@ public class DomainLookupExecutor {
 					continue;
 				}
 			}
+		} else {
+			// TODO: error state
 		}
 		
 		domainLookup.setDomainLookupState(lookupStateRepository.findByName("Complete"));
