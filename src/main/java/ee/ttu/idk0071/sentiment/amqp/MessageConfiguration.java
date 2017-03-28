@@ -6,7 +6,7 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import ee.ttu.idk0071.sentiment.amqp.messages.DomainLookupRequestMessage;
+import ee.ttu.idk0071.sentiment.lib.messages.DomainLookupRequestMessage;
 
 @Configuration
 public class MessageConfiguration {
