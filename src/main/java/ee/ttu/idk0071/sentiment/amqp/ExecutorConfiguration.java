@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import ee.ttu.idk0071.sentiment.executor.DomainLookupExecutor;
+
 @Configuration
 public class ExecutorConfiguration extends MessageConfiguration {
 	protected final String lookupQueue = "lookup-request-queue";
