@@ -24,6 +24,8 @@ import ee.ttu.idk0071.sentiment.utils.FetcherFactory;
 
 @Component
 public class DomainLookupExecutor {
+	private static final long MAX_QUERY_RESULTS = 1000L;
+
 	@Autowired
 	private DomainLookupStateRepository lookupStateRepository;
 	@Autowired
@@ -42,9 +44,13 @@ public class DomainLookupExecutor {
 		Domain domain = domainLookup.getDomain();
 		Fetcher fetcher = FetcherFactory.getFetcher(domain);
 		
-		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
+		long neutralCnt = 0, 
+			positiveCnt = 0, 
+			negativeCnt = 0;
+		
 		if (fetcher != null) {
-			Query query = new Query(queryString, 10L);
+			
+			Query query = new Query(queryString, MAX_QUERY_RESULTS);
 			List<String> searchResults = fetcher.fetch(query);
 			
 			SentimentAnalyzer analyzer = new ViveknSentimentAnalyzer();
@@ -68,8 +74,10 @@ public class DomainLookupExecutor {
 					continue;
 				}
 			}
+			
 		} else {
-			// TODO: error state
+			domainLookup.setDomainLookupState(lookupStateRepository.findByName("Error"));
+			return;
 		}
 		
 		domainLookup.setDomainLookupState(lookupStateRepository.findByName("Complete"));
