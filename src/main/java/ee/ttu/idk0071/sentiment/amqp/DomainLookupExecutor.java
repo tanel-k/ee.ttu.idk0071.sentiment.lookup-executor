@@ -7,7 +7,6 @@ import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import ee.ttu.idk0071.sentiment.amqp.messages.DomainLookupRequestMessage;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
 import ee.ttu.idk0071.sentiment.lib.analysis.impl.ViveknSentimentAnalyzer;
@@ -15,6 +14,7 @@ import ee.ttu.idk0071.sentiment.lib.fetching.api.Fetcher;
 import ee.ttu.idk0071.sentiment.lib.fetching.impl.GoogleFetcher;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.FetchException;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.Query;
+import ee.ttu.idk0071.sentiment.lib.messages.DomainLookupRequestMessage;
 import ee.ttu.idk0071.sentiment.model.Domain;
 import ee.ttu.idk0071.sentiment.model.DomainLookup;
 import ee.ttu.idk0071.sentiment.model.Lookup;
