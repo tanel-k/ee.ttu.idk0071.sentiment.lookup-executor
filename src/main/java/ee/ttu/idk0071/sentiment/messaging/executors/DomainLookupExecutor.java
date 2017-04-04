@@ -5,6 +5,7 @@ import java.util.List;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.builders.QueryBuilder;
@@ -26,7 +27,8 @@ import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
 
 @Component
 public class DomainLookupExecutor {
-	private static final long MAX_QUERY_RESULTS = 1000L;
+	@Value("${domain-lookups.max-results}")
+	private long maxResults; 
 
 	@Autowired
 	private DomainLookupStateRepository lookupStateRepository;
@@ -66,6 +68,7 @@ public class DomainLookupExecutor {
 			} catch (FetchException ex) {
 				// TODO log error
 				domainLookup.setDomainLookupState(lookupStateRepository.findByName("Error"));
+				System.out.println(ex);
 				return;
 			}
 			
@@ -105,7 +108,7 @@ public class DomainLookupExecutor {
 	private Query buildQuery(String queryString, Domain domain) {
 		return QueryBuilder.builder()
 				.setKeyword(queryString)
-				.setMaxResults(MAX_QUERY_RESULTS)
+				.setMaxResults(maxResults)
 				.setCredentials(credentialFactory.forDomain(domain))
 				.build();
 	}
