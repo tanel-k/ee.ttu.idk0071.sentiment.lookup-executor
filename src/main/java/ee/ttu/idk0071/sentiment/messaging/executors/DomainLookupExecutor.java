@@ -1,4 +1,4 @@
-package ee.ttu.idk0071.sentiment.executor;
+package ee.ttu.idk0071.sentiment.messaging.executors;
 
 import java.util.List;
 
@@ -7,9 +7,12 @@ import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import ee.ttu.idk0071.sentiment.builders.QueryBuilder;
+import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
+import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
+import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
-import ee.ttu.idk0071.sentiment.lib.analysis.impl.ViveknSentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.fetching.api.Fetcher;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.FetchException;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.Query;
@@ -20,7 +23,6 @@ import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
-import ee.ttu.idk0071.sentiment.utils.FetcherFactory;
 
 @Component
 public class DomainLookupExecutor {
@@ -30,6 +32,13 @@ public class DomainLookupExecutor {
 	private DomainLookupStateRepository lookupStateRepository;
 	@Autowired
 	private DomainLookupRepository domainLookupRepository;
+
+	@Autowired
+	private FetcherFactory fetcherFactory;
+	@Autowired
+	private CredentialFactory credentialFactory;
+	@Autowired
+	private AnalyzerFactory analyzerFactory;
 
 	@Transactional
 	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
@@ -42,18 +51,25 @@ public class DomainLookupExecutor {
 		domainLookupRepository.save(domainLookup);
 		
 		Domain domain = domainLookup.getDomain();
-		Fetcher fetcher = FetcherFactory.getFetcher(domain);
+		Fetcher fetcher = fetcherFactory.getFetcher(domain);
 		
 		long neutralCnt = 0, 
 			positiveCnt = 0, 
 			negativeCnt = 0;
 		
 		if (fetcher != null) {
+
+			Query query = buildQuery(queryString, domain);
+			List<String> searchResults;
+			try {
+				searchResults = fetcher.fetch(query);
+			} catch (FetchException ex) {
+				// TODO log error
+				domainLookup.setDomainLookupState(lookupStateRepository.findByName("Error"));
+				return;
+			}
 			
-			Query query = new Query(queryString, MAX_QUERY_RESULTS);
-			List<String> searchResults = fetcher.fetch(query);
-			
-			SentimentAnalyzer analyzer = new ViveknSentimentAnalyzer();
+			SentimentAnalyzer analyzer = analyzerFactory.getAnalyzer();
 			
 			for (String text : searchResults) {
 				try {
@@ -70,7 +86,8 @@ public class DomainLookupExecutor {
 						default:
 							break;
 					}
-				} catch (SentimentRetrievalException e) {
+				} catch (SentimentRetrievalException ex) {
+					// TODO log error
 					continue;
 				}
 			}
@@ -83,5 +100,13 @@ public class DomainLookupExecutor {
 		domainLookup.setDomainLookupState(lookupStateRepository.findByName("Complete"));
 		domainLookup.setCounts(negativeCnt, neutralCnt, positiveCnt);
 		domainLookupRepository.save(domainLookup);
+	}
+
+	private Query buildQuery(String queryString, Domain domain) {
+		return QueryBuilder.builder()
+				.setKeyword(queryString)
+				.setMaxResults(MAX_QUERY_RESULTS)
+				.setCredentials(credentialFactory.forDomain(domain))
+				.build();
 	}
 }

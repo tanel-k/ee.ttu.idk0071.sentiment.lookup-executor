@@ -1,4 +1,4 @@
-package ee.ttu.idk0071.sentiment.amqp;
+package ee.ttu.idk0071.sentiment.messaging;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import ee.ttu.idk0071.sentiment.executor.DomainLookupExecutor;
+import ee.ttu.idk0071.sentiment.messaging.executors.DomainLookupExecutor;
 
 @Configuration
 public class ExecutorConfiguration extends MessageConfiguration {

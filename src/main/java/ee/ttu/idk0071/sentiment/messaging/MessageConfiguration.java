@@ -1,4 +1,4 @@
-package ee.ttu.idk0071.sentiment.amqp;
+package ee.ttu.idk0071.sentiment.messaging;
 
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
