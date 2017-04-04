@@ -68,7 +68,6 @@ public class DomainLookupExecutor {
 			} catch (FetchException ex) {
 				// TODO log error
 				domainLookup.setDomainLookupState(lookupStateRepository.findByName("Error"));
-				System.out.println(ex);
 				return;
 			}
 			
