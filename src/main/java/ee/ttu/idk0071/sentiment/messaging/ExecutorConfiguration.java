@@ -5,6 +5,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,7 +14,8 @@ import ee.ttu.idk0071.sentiment.messaging.executors.DomainLookupExecutor;
 @Configuration
 public class ExecutorConfiguration extends MessageConfiguration {
 	protected final String lookupQueue = "lookup-request-queue";
-	protected final int poolSize = 10;
+	@Value("${domain-lookups.executors.pool-size}") 
+	protected int poolSize;
 
 	@Autowired
 	private DomainLookupExecutor lookupExecutor;

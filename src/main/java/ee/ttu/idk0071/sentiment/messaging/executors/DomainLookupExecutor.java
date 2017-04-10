@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.builders.QueryBuilder;
+import ee.ttu.idk0071.sentiment.consts.DomainLookupConsts;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
 import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
@@ -42,17 +43,31 @@ public class DomainLookupExecutor {
 	@Autowired
 	private AnalyzerFactory analyzerFactory;
 
-	@Transactional
 	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
 		DomainLookup domainLookup = domainLookupRepository.findOne(lookupRequest.getDomainLookupId());
-		Lookup lookup = domainLookup.getLookup();
-		LookupEntity lookupEntity = lookup.getLookupEntity();
-		String queryString = lookupEntity.getName();
-		
-		domainLookup.setDomainLookupState(lookupStateRepository.findByName("In progress"));
+		domainLookup.setDomainLookupState(lookupStateRepository.findByName(DomainLookupConsts.STATE_IN_PROGRESS));
 		domainLookupRepository.save(domainLookup);
 		
+		try {
+			performLookup(domainLookup);
+		} catch (Throwable t) {
+			// TODO log error
+			setErrorState(domainLookup);
+		}
+	}
+
+	@Transactional
+	private void performLookup(DomainLookup domainLookup) {
+		Lookup lookup = domainLookup.getLookup();
+		LookupEntity lookupEntity = lookup.getLookupEntity();
 		Domain domain = domainLookup.getDomain();
+		
+		if (!domain.isActive()) {
+			setErrorState(domainLookup);
+			return;
+		}
+		
+		String queryString = lookupEntity.getName();
 		Fetcher fetcher = fetcherFactory.getFetcher(domain);
 		
 		long neutralCnt = 0, 
@@ -60,14 +75,14 @@ public class DomainLookupExecutor {
 			negativeCnt = 0;
 		
 		if (fetcher != null) {
-
+			
 			Query query = buildQuery(queryString, domain);
 			List<String> searchResults;
 			try {
 				searchResults = fetcher.fetch(query);
 			} catch (FetchException ex) {
 				// TODO log error
-				domainLookup.setDomainLookupState(lookupStateRepository.findByName("Error"));
+				setErrorState(domainLookup);
 				return;
 			}
 			
@@ -95,12 +110,17 @@ public class DomainLookupExecutor {
 			}
 			
 		} else {
-			domainLookup.setDomainLookupState(lookupStateRepository.findByName("Error"));
+			setErrorState(domainLookup);
 			return;
 		}
 		
-		domainLookup.setDomainLookupState(lookupStateRepository.findByName("Complete"));
+		domainLookup.setDomainLookupState(lookupStateRepository.findByName(DomainLookupConsts.STATE_COMPLETE));
 		domainLookup.setCounts(negativeCnt, neutralCnt, positiveCnt);
+		domainLookupRepository.save(domainLookup);
+	}
+
+	private void setErrorState(DomainLookup domainLookup) {
+		domainLookup.setDomainLookupState(lookupStateRepository.findByName(DomainLookupConsts.STATE_ERROR));
 		domainLookupRepository.save(domainLookup);
 	}
 
