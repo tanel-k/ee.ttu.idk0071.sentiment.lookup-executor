@@ -45,8 +45,7 @@ public class DomainLookupExecutor {
 
 	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
 		DomainLookup domainLookup = domainLookupRepository.findOne(lookupRequest.getDomainLookupId());
-		domainLookup.setDomainLookupState(lookupStateRepository.findByName(DomainLookupConsts.STATE_IN_PROGRESS));
-		domainLookupRepository.save(domainLookup);
+		setStateAndSave(domainLookup, DomainLookupConsts.STATE_IN_PROGRESS);
 		
 		try {
 			performLookup(domainLookup);
@@ -57,9 +56,7 @@ public class DomainLookupExecutor {
 	}
 
 	@Transactional
-	private void performLookup(DomainLookup domainLookup) {
-		Lookup lookup = domainLookup.getLookup();
-		LookupEntity lookupEntity = lookup.getLookupEntity();
+	public void performLookup(DomainLookup domainLookup) {
 		Domain domain = domainLookup.getDomain();
 		
 		if (!domain.isActive()) {
@@ -67,6 +64,8 @@ public class DomainLookupExecutor {
 			return;
 		}
 		
+		Lookup lookup = domainLookup.getLookup();
+		LookupEntity lookupEntity = lookup.getLookupEntity();
 		String queryString = lookupEntity.getName();
 		Fetcher fetcher = fetcherFactory.getFetcher(domain);
 		
@@ -87,7 +86,6 @@ public class DomainLookupExecutor {
 			}
 			
 			SentimentAnalyzer analyzer = analyzerFactory.getAnalyzer();
-			
 			for (String text : searchResults) {
 				try {
 					switch (analyzer.getSentiment(text)) {
@@ -120,7 +118,11 @@ public class DomainLookupExecutor {
 	}
 
 	private void setErrorState(DomainLookup domainLookup) {
-		domainLookup.setDomainLookupState(lookupStateRepository.findByName(DomainLookupConsts.STATE_ERROR));
+		setStateAndSave(domainLookup, DomainLookupConsts.STATE_ERROR);
+	}
+
+	private void setStateAndSave(DomainLookup domainLookup, String stateName) {
+		domainLookup.setDomainLookupState(lookupStateRepository.findByName(stateName));
 		domainLookupRepository.save(domainLookup);
 	}
 
