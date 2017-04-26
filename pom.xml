@@ -70,6 +70,11 @@
 			<version>1.6.6</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+		    <groupId>it.ozimov</groupId>
+		    <artifactId>spring-boot-email-core</artifactId>
+		    <version>0.6.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>
