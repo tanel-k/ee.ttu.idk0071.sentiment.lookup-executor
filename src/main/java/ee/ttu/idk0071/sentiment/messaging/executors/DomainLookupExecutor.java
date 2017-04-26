@@ -1,7 +1,9 @@
 package ee.ttu.idk0071.sentiment.messaging.executors;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.mail.internet.InternetAddress;
 import javax.transaction.Transactional;
@@ -32,6 +34,7 @@ import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
 import it.ozimov.springboot.mail.model.Email;
 import it.ozimov.springboot.mail.model.defaultimpl.DefaultEmail;
 import it.ozimov.springboot.mail.service.EmailService;
+import it.ozimov.springboot.mail.service.exception.CannotSendEmailException;
 
 @Component
 public class DomainLookupExecutor {
@@ -128,7 +131,7 @@ public class DomainLookupExecutor {
 		domainLookup.setDomainLookupState(domainLookupStateRepository.findByName(DomainLookupConsts.STATE_COMPLETE));
 		domainLookup.setCounts(negativeCnt, neutralCnt, positiveCnt);
 		domainLookupRepository.save(domainLookup);
-		if (checkIfAllDone(lookup)) sendEmail(domainLookup);
+		if (checkIfAllDone(domainLookupRepository.findOne(domainLookup.getId()))) sendEmail(domainLookup);
 	}
 
 	private void setErrorState(DomainLookup domainLookup) {
@@ -138,7 +141,7 @@ public class DomainLookupExecutor {
 	private void setStateAndSave(DomainLookup domainLookup, String stateName) {
 		domainLookup.setDomainLookupState(domainLookupStateRepository.findByName(stateName));
 		domainLookupRepository.save(domainLookup);
-		if (checkIfAllDone(domainLookup.getLookup())) sendEmail(domainLookup);
+		if (checkIfAllDone(domainLookupRepository.findOne(domainLookup.getId()))) sendEmail(domainLookup);
 	}
 
 	private Query buildQuery(String queryString, Domain domain) {
@@ -146,9 +149,9 @@ public class DomainLookupExecutor {
 				.setCredentials(credentialFactory.forDomain(domain)).build();
 	}
 
-	private boolean checkIfAllDone(Lookup lookup) {
-
-		List<DomainLookup> domainLookups = lookup.getDomainLookups();
+	private boolean checkIfAllDone(DomainLookup dLookup) {
+		
+		List<DomainLookup> domainLookups = dLookup.getLookup().getDomainLookups();
 
 		for (DomainLookup domainLookup : domainLookups) {
 			if (domainLookup.getDomainLookupState().getCode() == DomainLookup.STATE_CODE_IN_PROGRESS
@@ -160,43 +163,33 @@ public class DomainLookupExecutor {
 	}
 	
 	private void sendEmail(DomainLookup domainLookup){
-		   Lookup lookup = domainLookup.getLookup();
-		   Email email = null;
-		   String recipient = lookup.getEmail();
+			final Map<String, Object> modelObject = new HashMap<>();
+			Lookup lookup = domainLookup.getLookup();
+			Email email = null;
+			String recipient = lookup.getEmail();
 		try {
 			email = DefaultEmail.builder()
 			        .from(new InternetAddress(senderAddress, senderName))
 			        .to(Lists.newArrayList(new InternetAddress(recipient,null)))
 			        .subject(generateEmailSubject(lookup))
-			        .body(generateEmailBody(lookup))
+			        .body("")
 			        .encoding("UTF-8").build();
 			
-		} catch (UnsupportedEncodingException e) {
+	        modelObject.put("entityName", lookup.getLookupEntity().getName());
+	        modelObject.put("lookupId", lookup.getId());
+	        modelObject.put("baseURL", baseURL);
+	    
+	        emailService.send(email, "emailBody.ftl", modelObject);
+	        
+		} catch (UnsupportedEncodingException | CannotSendEmailException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		   emailService.send(email);
-		}
+   };
 	
 	private String generateEmailSubject(Lookup lookup){
 		String subject = "Your lookup for " + lookup.getLookupEntity().getName() + " has completed!";
 		return subject;
-	}
-	
-	private String generateEmailBody(Lookup lookup){
-		String body = 
-				"<!doctype html><html><body><p>"
-				+ "Hi! <br>"
-				+ "we are glad to say that Your lookup for " 
-					+ lookup.getLookupEntity().getName() + " has completed! <br>"
-				+ "You can see the results if You follow <a href=\"baseURL" 
-					+ lookup.getId() + "\">this link.</a><br>"
-				+ baseURL + lookup.getId() 
-				+ "<br><br> Best regards <br>"
-				+ "Sentymental.ly team"
-				+ "</p>	</body></html>";
-		return body;
 	}
 	
 }

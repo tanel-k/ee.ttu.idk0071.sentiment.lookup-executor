@@ -71,9 +71,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-		    <groupId>it.ozimov</groupId>
-		    <artifactId>spring-boot-email-core</artifactId>
-		    <version>0.6.1</version>
+    		<groupId>it.ozimov</groupId>
+    		<artifactId>spring-boot-freemarker-email</artifactId>
+    		<version>0.6.1</version>
 		</dependency>
 	</dependencies>
 
