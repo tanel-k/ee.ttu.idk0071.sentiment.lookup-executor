@@ -185,14 +185,17 @@ public class DomainLookupExecutor {
 	}
 	
 	private String generateEmailBody(Lookup lookup){
-		String body = "Hi! <br>"
+		String body = 
+				"<!doctype html><html><body><p>"
+				+ "Hi! <br>"
 				+ "we are glad to say that Your lookup for " 
 					+ lookup.getLookupEntity().getName() + " has completed! <br>"
 				+ "You can see the results if You follow <a href=\"baseURL" 
 					+ lookup.getId() + "\">this link.</a><br>"
 				+ baseURL + lookup.getId() 
 				+ "<br><br> Best regards <br>"
-				+ "Sentymental.ly team";
+				+ "Sentymental.ly team"
+				+ "</p>	</body></html>";
 		return body;
 	}
 	
