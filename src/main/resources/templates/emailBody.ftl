@@ -22,7 +22,7 @@
 												font-weight:500; 
 												font-size: 22px; 
 												color:#fff;">
-												<h7>Sentymental.ly</h7>
+												<h7>Sentimental.ly</h7>
 									</td>
 									
 								</tr>
@@ -46,7 +46,7 @@
 									<p style="font-family: Arial;
 												margin-bottom:15px;
 												color:#2C3E50;">
-										we are glad to say that Your lookup for ${entityName} has completed!
+										we are glad to say that Your lookup for <em>${entityName}</em> has completed!
 									</p>
 								 
 									<p style="padding:15px;
