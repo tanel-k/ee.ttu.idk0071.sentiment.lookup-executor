@@ -128,7 +128,7 @@ public class DomainLookupExecutor {
 		domainLookup.setDomainLookupState(domainLookupStateRepository.findByName(DomainLookupConsts.STATE_COMPLETE));
 		domainLookup.setCounts(negativeCnt, neutralCnt, positiveCnt);
 		domainLookupRepository.save(domainLookup);
-		if (checkIfAllDone(domainLookup)) sendEmail(domainLookup);
+		if (checkIfAllDone(lookup)) sendEmail(domainLookup);
 	}
 
 	private void setErrorState(DomainLookup domainLookup) {
@@ -138,7 +138,7 @@ public class DomainLookupExecutor {
 	private void setStateAndSave(DomainLookup domainLookup, String stateName) {
 		domainLookup.setDomainLookupState(domainLookupStateRepository.findByName(stateName));
 		domainLookupRepository.save(domainLookup);
-		if (checkIfAllDone(domainLookup)) sendEmail(domainLookup);
+		if (checkIfAllDone(domainLookup.getLookup())) sendEmail(domainLookup);
 	}
 
 	private Query buildQuery(String queryString, Domain domain) {
@@ -146,9 +146,9 @@ public class DomainLookupExecutor {
 				.setCredentials(credentialFactory.forDomain(domain)).build();
 	}
 
-	private boolean checkIfAllDone(DomainLookup dLookup) {
+	private boolean checkIfAllDone(Lookup lookup) {
 
-		List<DomainLookup> domainLookups = dLookup.getLookup().getDomainLookups();
+		List<DomainLookup> domainLookups = lookup.getDomainLookups();
 
 		for (DomainLookup domainLookup : domainLookups) {
 			if (domainLookup.getDomainLookupState().getCode() == DomainLookup.STATE_CODE_IN_PROGRESS
