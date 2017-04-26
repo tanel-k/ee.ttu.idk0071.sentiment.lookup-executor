@@ -167,6 +167,7 @@ public class DomainLookupExecutor {
 			Lookup lookup = domainLookup.getLookup();
 			Email email = null;
 			String recipient = lookup.getEmail();
+		if (recipient == null) return;
 		try {
 			email = DefaultEmail.builder()
 			        .from(new InternetAddress(senderAddress, senderName))
