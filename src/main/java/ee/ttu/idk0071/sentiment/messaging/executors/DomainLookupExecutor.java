@@ -1,21 +1,16 @@
 package ee.ttu.idk0071.sentiment.messaging.executors;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.internet.InternetAddress;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.Lists;
-
 import ee.ttu.idk0071.sentiment.builders.QueryBuilder;
-import ee.ttu.idk0071.sentiment.consts.DomainLookupConsts;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
 import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
@@ -27,32 +22,33 @@ import ee.ttu.idk0071.sentiment.lib.fetching.objects.Query;
 import ee.ttu.idk0071.sentiment.lib.messages.DomainLookupRequestMessage;
 import ee.ttu.idk0071.sentiment.model.Domain;
 import ee.ttu.idk0071.sentiment.model.DomainLookup;
+import ee.ttu.idk0071.sentiment.model.DomainLookupState;
 import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
-import it.ozimov.springboot.mail.model.Email;
-import it.ozimov.springboot.mail.model.defaultimpl.DefaultEmail;
-import it.ozimov.springboot.mail.service.EmailService;
-import it.ozimov.springboot.mail.service.exception.CannotSendEmailException;
+import ee.ttu.idk0071.sentiment.services.MailService;
+import ee.ttu.idk0071.sentiment.services.objects.MailModel;
+import ee.ttu.idk0071.sentiment.services.objects.MailParty;
 
 @Component
 public class DomainLookupExecutor {
 	@Value("${domain-lookups.max-results}")
 	private long maxResults;
-	@Value("${lookups.notifications.senderAddress}")
+	@Value("${lookups.notifications.sender-address}")
 	private String senderAddress;
-	@Value("${lookups.notifications.senderName}")
+	@Value("${lookups.notifications.sender-name}")
 	private String senderName;
-	@Value("${lookups.url.lookupDetailBaseURL}")
-	private String baseURL;
+	@Value("${deployment.urls.lookup-detail-base-url}")
+	private String lookupDetailBaseURL;
 
 	@Autowired
 	private DomainLookupStateRepository domainLookupStateRepository;
 	@Autowired
 	private DomainLookupRepository domainLookupRepository;
+
 	@Autowired
-	public EmailService emailService;
+	public MailService mailService;
 
 	@Autowired
 	private FetcherFactory fetcherFactory;
@@ -63,44 +59,43 @@ public class DomainLookupExecutor {
 
 	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
 		DomainLookup domainLookup = domainLookupRepository.findOne(lookupRequest.getDomainLookupId());
-		setStateAndSave(domainLookup, DomainLookupConsts.STATE_IN_PROGRESS);
+		setStateAndSave(domainLookup, DomainLookup.STATE_CODE_IN_PROGRESS);
 
 		try {
 			performLookup(domainLookup);
 		} catch (Throwable t) {
 			// TODO log error
-			setErrorState(domainLookup);
+			completeLookupWithError(domainLookup);
 		}
 	}
 
 	@Transactional
 	public void performLookup(DomainLookup domainLookup) {
 		Domain domain = domainLookup.getDomain();
-
+		
 		if (!domain.isActive()) {
-			setErrorState(domainLookup);
+			completeLookupWithError(domainLookup);
 			return;
 		}
-
+		
 		Lookup lookup = domainLookup.getLookup();
 		LookupEntity lookupEntity = lookup.getLookupEntity();
 		String queryString = lookupEntity.getName();
 		Fetcher fetcher = fetcherFactory.getFetcher(domain);
-
+		
 		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
-
 		if (fetcher != null) {
-
+			
 			Query query = buildQuery(queryString, domain);
 			List<String> searchResults;
 			try {
 				searchResults = fetcher.fetch(query);
 			} catch (FetchException ex) {
 				// TODO log error
-				setErrorState(domainLookup);
+				completeLookupWithError(domainLookup);
 				return;
 			}
-
+			
 			SentimentAnalyzer analyzer = analyzerFactory.getAnalyzer();
 			for (String text : searchResults) {
 				try {
@@ -122,26 +117,34 @@ public class DomainLookupExecutor {
 					continue;
 				}
 			}
-
+			
 		} else {
-			setErrorState(domainLookup);
+			completeLookupWithError(domainLookup);
 			return;
 		}
-
-		domainLookup.setDomainLookupState(domainLookupStateRepository.findByName(DomainLookupConsts.STATE_COMPLETE));
+		
 		domainLookup.setCounts(negativeCnt, neutralCnt, positiveCnt);
-		domainLookupRepository.save(domainLookup);
-		if (checkIfAllDone(domainLookupRepository.findOne(domainLookup.getId()))) sendEmail(domainLookup);
+		completeLookup(domainLookup);
 	}
 
-	private void setErrorState(DomainLookup domainLookup) {
-		setStateAndSave(domainLookup, DomainLookupConsts.STATE_ERROR);
+	private void terminateWithState(DomainLookup domainLookup, Integer stateCode) {
+		setStateAndSave(domainLookup, stateCode);
+		if (isLookupComplete(domainLookup)) {
+			sendCompletionNotification(domainLookup);
+		}
 	}
 
-	private void setStateAndSave(DomainLookup domainLookup, String stateName) {
-		domainLookup.setDomainLookupState(domainLookupStateRepository.findByName(stateName));
+	private void completeLookup(DomainLookup domainLookup) {
+		terminateWithState(domainLookup, DomainLookup.STATE_CODE_COMPLETE);
+	}
+
+	private void completeLookupWithError(DomainLookup domainLookup) {
+		terminateWithState(domainLookup, DomainLookup.STATE_CODE_ERROR);
+	}
+
+	private void setStateAndSave(DomainLookup domainLookup, Integer stateCode) {
+		domainLookup.setDomainLookupState(domainLookupStateRepository.findOne(stateCode));
 		domainLookupRepository.save(domainLookup);
-		if (checkIfAllDone(domainLookupRepository.findOne(domainLookup.getId()))) sendEmail(domainLookup);
 	}
 
 	private Query buildQuery(String queryString, Domain domain) {
@@ -149,48 +152,40 @@ public class DomainLookupExecutor {
 				.setCredentials(credentialFactory.forDomain(domain)).build();
 	}
 
-	private boolean checkIfAllDone(DomainLookup dLookup) {
-		
-		List<DomainLookup> domainLookups = dLookup.getLookup().getDomainLookups();
+	private DomainLookup refresh(DomainLookup domainLookup) {
+		DomainLookup refreshedLookup = domainLookupRepository.findOne(domainLookup.getId());
+		return refreshedLookup != null ? refreshedLookup : domainLookup;
+	}
 
-		for (DomainLookup domainLookup : domainLookups) {
-			if (domainLookup.getDomainLookupState().getCode() == DomainLookup.STATE_CODE_IN_PROGRESS
-					|| domainLookup.getDomainLookupState().getCode() == DomainLookup.STATE_CODE_QUEUED) {
-				return false;
-			}
-		}
-		return true;
+	private boolean isLookupComplete(DomainLookup domainLookup) {
+		domainLookup = refresh(domainLookup);
+		return !domainLookup.getLookup().getDomainLookups().stream().anyMatch(dl -> {
+			DomainLookupState state = dl.getDomainLookupState();
+			return state.getCode() == DomainLookup.STATE_CODE_IN_PROGRESS || state.getCode() == DomainLookup.STATE_CODE_QUEUED;
+		});
 	}
-	
-	private void sendEmail(DomainLookup domainLookup){
-			final Map<String, Object> modelObject = new HashMap<>();
-			Lookup lookup = domainLookup.getLookup();
-			Email email = null;
-			String recipient = lookup.getEmail();
-		if (recipient == null) return;
-		try {
-			email = DefaultEmail.builder()
-			        .from(new InternetAddress(senderAddress, senderName))
-			        .to(Lists.newArrayList(new InternetAddress(recipient,null)))
-			        .subject(generateEmailSubject(lookup))
-			        .body("")
-			        .encoding("UTF-8").build();
-			
-	        modelObject.put("entityName", lookup.getLookupEntity().getName());
-	        modelObject.put("lookupId", lookup.getId());
-	        modelObject.put("baseURL", baseURL);
-	    
-	        emailService.send(email, "emailBody.ftl", modelObject);
-	        
-		} catch (UnsupportedEncodingException | CannotSendEmailException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+	private void sendCompletionNotification(DomainLookup domainLookup){
+		Lookup lookup = domainLookup.getLookup();
+		if (lookup.getEmail() == null) {
+			return;
 		}
-   };
-	
-	private String generateEmailSubject(Lookup lookup){
-		String subject = "Your lookup for " + lookup.getLookupEntity().getName() + " has completed!";
-		return subject;
+		
+		MailModel mailModel = new MailModel();
+		mailModel.setTopic("Your lookup for " + lookup.getLookupEntity().getName() + " has completed!");
+		MailParty recipient = new MailParty();
+		recipient.setAddress(lookup.getEmail());
+		recipient.setName(null);
+		
+		MailParty sender = new MailParty();
+		sender.setAddress(senderAddress);
+		sender.setName(senderName);
+		
+		Map<String, Object> templateContext = new HashMap<>();
+		templateContext.put("entityName", lookup.getLookupEntity().getName());
+		templateContext.put("lookupId", lookup.getId());
+		templateContext.put("baseURL", lookupDetailBaseURL);
+		
+		mailService.sendEmailTemplate(mailModel, "email-body.ftl", templateContext);
 	}
-	
 }

@@ -2,6 +2,7 @@ package ee.ttu.idk0071.sentiment.messaging.executors;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.Assert;
@@ -15,7 +16,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import ee.ttu.idk0071.sentiment.consts.DomainLookupConsts;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
 import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
@@ -32,6 +32,8 @@ import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
+import ee.ttu.idk0071.sentiment.services.MailService;
+import ee.ttu.idk0071.sentiment.services.objects.MailModel;
 
 @SpringBootTest
 @RunWith(PowerMockRunner.class)
@@ -50,24 +52,30 @@ public class DomainLookupExecutorTests {
 	private CredentialFactory credentialFactory;
 	@Mock
 	private AnalyzerFactory analyzerFactory;
+	@Mock
+	private MailService mailService;
 
 	private DomainLookupState errorState;
 	private DomainLookupState completeState;
 
 	@Before
+	@SuppressWarnings("unchecked")
 	public void beforeTests() {
+		Mockito.doNothing().when(mailService).sendEmailTemplate(Mockito.any(MailModel.class), Mockito.any(String.class), Mockito.any(Map.class));
 		errorState = new DomainLookupState();
-		Mockito.when(lookupStateRepository.findByName(DomainLookupConsts.STATE_ERROR)).thenReturn(errorState);
+		Mockito.when(lookupStateRepository.findOne(DomainLookup.STATE_CODE_ERROR)).thenReturn(errorState);
 		completeState = new DomainLookupState();
-		Mockito.when(lookupStateRepository.findByName(DomainLookupConsts.STATE_COMPLETE)).thenReturn(completeState);
+		Mockito.when(lookupStateRepository.findOne(DomainLookup.STATE_CODE_COMPLETE)).thenReturn(completeState);
 	}
 
 	@Test
 	public void testInactiveDomainCausesErrorState() {
 		Domain inactiveDomain = new Domain();
 		inactiveDomain.setActive(false);
-		
+		Lookup lookup = new Lookup();
 		DomainLookup domainLookup = new DomainLookup();
+		domainLookup.setLookup(lookup);
+		lookup.getDomainLookups().add(domainLookup);
 		domainLookup.setDomain(inactiveDomain);
 		
 		domainLookupExecutor.performLookup(domainLookup);
