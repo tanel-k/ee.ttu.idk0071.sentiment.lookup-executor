@@ -134,7 +134,7 @@ public class DomainLookupExecutor {
 
 	private void terminateWithState(DomainLookup domainLookup, Integer stateCode) {
 		setStateAndSave(domainLookup, stateCode);
-		if (isLookupComplete(domainLookup)) {
+		if (isParentLookupCompleteFor(domainLookup)) {
 			sendCompletionNotification(domainLookup);
 		}
 	}
@@ -162,7 +162,7 @@ public class DomainLookupExecutor {
 		return refreshedLookup != null ? refreshedLookup : domainLookup;
 	}
 
-	private boolean isLookupComplete(DomainLookup domainLookup) {
+	private boolean isParentLookupCompleteFor(DomainLookup domainLookup) {
 		domainLookup = refresh(domainLookup);
 		return !domainLookup.getLookup().getDomainLookups().stream().anyMatch(dl -> {
 			DomainLookupState state = dl.getDomainLookupState();
@@ -176,7 +176,7 @@ public class DomainLookupExecutor {
 			return;
 		}
 		
-		Mail mailModel = constructCompletionEmail(lookup);
+		Mail mailModel = constructCompletionNotification(lookup);
 		
 		Map<String, Object> context = new HashMap<>();
 		context.put(CONTEXT_KEY_ENTITY_NAME, lookup.getLookupEntity().getName());
@@ -186,7 +186,7 @@ public class DomainLookupExecutor {
 		mailService.sendEmailTemplate(mailModel, COMPLETION_EMAIL_TEMPLATE, context);
 	}
 
-	private Mail constructCompletionEmail(Lookup lookup) {
+	private Mail constructCompletionNotification(Lookup lookup) {
 		Mail mail = new Mail();
 		MailParty recipient = new MailParty();
 		recipient.setAddress(lookup.getEmail());
