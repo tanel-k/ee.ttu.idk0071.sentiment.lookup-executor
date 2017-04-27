@@ -46,7 +46,7 @@
 									<p style="font-family: Arial;
 												margin-bottom:15px;
 												color:#2C3E50;">
-										we are glad to say that Your lookup for <em>${entityName}</em> has completed!
+										Your lookup for <em>${entityName}</em> has completed!
 									</p>
 								 
 									<p style="padding:15px;
@@ -54,7 +54,7 @@
 												font-family: Arial; 
 												line-height: 1.1;
 												color:#2C3E50;">
-										You can see the results if You follow <a style="font-weight:bold;color: #18BC9C;" href="${baseURL}${lookupId}">this link.</a>
+										You can see the results if you follow <a style="font-weight:bold;color: #18BC9C;" href="${baseURL}${lookupId}">this link.</a>
 									</p>
 								 
 									<p><a style="font-family: Arial; 
