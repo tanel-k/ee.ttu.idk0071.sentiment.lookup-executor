@@ -28,11 +28,16 @@ import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
 import ee.ttu.idk0071.sentiment.services.MailService;
-import ee.ttu.idk0071.sentiment.services.objects.MailModel;
+import ee.ttu.idk0071.sentiment.services.objects.Mail;
 import ee.ttu.idk0071.sentiment.services.objects.MailParty;
 
 @Component
 public class DomainLookupExecutor {
+	private static final String COMPLETION_EMAIL_TEMPLATE = "completion-email-template.ftl";
+	private static final String CONTEXT_KEY_BASE_URL = "baseURL";
+	private static final String CONTEXT_KEY_LOOKUP_ID = "lookupId";
+	private static final String CONTEXT_KEY_ENTITY_NAME = "entityName";
+
 	@Value("${domain-lookups.max-results}")
 	private long maxResults;
 	@Value("${lookups.notifications.sender-address}")
@@ -60,7 +65,7 @@ public class DomainLookupExecutor {
 	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
 		DomainLookup domainLookup = domainLookupRepository.findOne(lookupRequest.getDomainLookupId());
 		setStateAndSave(domainLookup, DomainLookup.STATE_CODE_IN_PROGRESS);
-
+		
 		try {
 			performLookup(domainLookup);
 		} catch (Throwable t) {
@@ -100,17 +105,17 @@ public class DomainLookupExecutor {
 			for (String text : searchResults) {
 				try {
 					switch (analyzer.getSentiment(text)) {
-					case NEUTRAL:
-						neutralCnt++;
-						break;
-					case POSITIVE:
-						positiveCnt++;
-						break;
-					case NEGATIVE:
-						negativeCnt++;
-						break;
-					default:
-						break;
+						case NEUTRAL:
+							neutralCnt++;
+							break;
+						case POSITIVE:
+							positiveCnt++;
+							break;
+						case NEGATIVE:
+							negativeCnt++;
+							break;
+						default:
+							break;
 					}
 				} catch (SentimentRetrievalException ex) {
 					// TODO log error
@@ -171,8 +176,18 @@ public class DomainLookupExecutor {
 			return;
 		}
 		
-		MailModel mailModel = new MailModel();
-		mailModel.setTopic("Your lookup for " + lookup.getLookupEntity().getName() + " has completed!");
+		Mail mailModel = constructCompletionEmail(lookup);
+		
+		Map<String, Object> context = new HashMap<>();
+		context.put(CONTEXT_KEY_ENTITY_NAME, lookup.getLookupEntity().getName());
+		context.put(CONTEXT_KEY_LOOKUP_ID, String.valueOf(lookup.getId()));
+		context.put(CONTEXT_KEY_BASE_URL, lookupDetailBaseURL);
+		
+		mailService.sendEmailTemplate(mailModel, COMPLETION_EMAIL_TEMPLATE, context);
+	}
+
+	private Mail constructCompletionEmail(Lookup lookup) {
+		Mail mail = new Mail();
 		MailParty recipient = new MailParty();
 		recipient.setAddress(lookup.getEmail());
 		recipient.setName(null);
@@ -181,11 +196,10 @@ public class DomainLookupExecutor {
 		sender.setAddress(senderAddress);
 		sender.setName(senderName);
 		
-		Map<String, Object> templateContext = new HashMap<>();
-		templateContext.put("entityName", lookup.getLookupEntity().getName());
-		templateContext.put("lookupId", lookup.getId());
-		templateContext.put("baseURL", lookupDetailBaseURL);
+		mail.setRecipient(recipient);
+		mail.setSender(sender);
 		
-		mailService.sendEmailTemplate(mailModel, "email-body.ftl", templateContext);
+		mail.setSubject("Your lookup for " + lookup.getLookupEntity().getName() + " has completed!");
+		return mail;
 	}
 }

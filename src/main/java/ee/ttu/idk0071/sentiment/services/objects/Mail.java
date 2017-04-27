@@ -3,10 +3,10 @@ package ee.ttu.idk0071.sentiment.services.objects;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MailModel {
+public class Mail {
 	private MailParty recipient;
 	private MailParty sender;
-	private String topic;
+	private String subject;
 	private String body;
 
 	private Map<String, Object> parameters = new HashMap<String, Object>();
@@ -27,12 +27,12 @@ public class MailModel {
 		this.sender = sender;
 	}
 
-	public String getTopic() {
-		return topic;
+	public String getSubject() {
+		return subject;
 	}
 
-	public void setTopic(String topic) {
-		this.topic = topic;
+	public void setSubject(String topic) {
+		this.subject = topic;
 	}
 
 	public String getBody() {

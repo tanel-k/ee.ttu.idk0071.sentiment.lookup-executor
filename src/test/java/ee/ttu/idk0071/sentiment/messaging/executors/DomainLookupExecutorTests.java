@@ -33,7 +33,7 @@ import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
 import ee.ttu.idk0071.sentiment.services.MailService;
-import ee.ttu.idk0071.sentiment.services.objects.MailModel;
+import ee.ttu.idk0071.sentiment.services.objects.Mail;
 
 @SpringBootTest
 @RunWith(PowerMockRunner.class)
@@ -61,7 +61,7 @@ public class DomainLookupExecutorTests {
 	@Before
 	@SuppressWarnings("unchecked")
 	public void beforeTests() {
-		Mockito.doNothing().when(mailService).sendEmailTemplate(Mockito.any(MailModel.class), Mockito.any(String.class), Mockito.any(Map.class));
+		Mockito.doNothing().when(mailService).sendEmailTemplate(Mockito.any(Mail.class), Mockito.any(String.class), Mockito.any(Map.class));
 		errorState = new DomainLookupState();
 		Mockito.when(lookupStateRepository.findOne(DomainLookup.STATE_CODE_ERROR)).thenReturn(errorState);
 		completeState = new DomainLookupState();

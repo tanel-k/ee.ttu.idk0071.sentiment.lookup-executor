@@ -1,6 +1,5 @@
 package ee.ttu.idk0071.sentiment.services;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import javax.mail.internet.InternetAddress;
@@ -10,26 +9,34 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
 
-import ee.ttu.idk0071.sentiment.services.objects.MailModel;
+import ee.ttu.idk0071.sentiment.services.objects.Mail;
 import it.ozimov.springboot.mail.model.Email;
 import it.ozimov.springboot.mail.model.defaultimpl.DefaultEmail;
 import it.ozimov.springboot.mail.service.EmailService;
-import it.ozimov.springboot.mail.service.exception.CannotSendEmailException;
+import it.ozimov.springboot.mail.utils.StringUtils;
 
 @Service
 public class MailService {
+	private static final String DEFAULT_MAIL_ENCODING = "UTF-8";
+
 	@Autowired
 	private EmailService emailService;
 
-	public void sendEmailTemplate(MailModel mail, String templateFile, Map<String, Object> templateContext) {
-		Email email = null;
+	public void sendEmailTemplate(Mail mail, String templateFile, Map<String, Object> context) {
 		try {
-			email = DefaultEmail.builder()
-				.from(new InternetAddress(mail.getSender().getAddress(), mail.getSender().getName()))
-				.to(Lists.newArrayList(new InternetAddress(mail.getSender().getAddress(), null)))
-				.subject(mail.getTopic()).body("").encoding("UTF-8").build();
-			emailService.send(email, templateFile, templateContext);
-		} catch (UnsupportedEncodingException|CannotSendEmailException e) {
+			InternetAddress senderAddress = new InternetAddress(mail.getSender().getAddress(), mail.getSender().getName());
+			InternetAddress recipientAddress = new InternetAddress(mail.getRecipient().getAddress(), null);
+			
+			Email email = DefaultEmail.builder()
+				.from(senderAddress)
+				.to(Lists.newArrayList(recipientAddress))
+				.subject(mail.getSubject())
+				.body(StringUtils.EMPTY)
+				.encoding(DEFAULT_MAIL_ENCODING)
+				.build();
+			
+			emailService.send(email, templateFile, context);
+		} catch (Throwable t) {
 			// consume failure
 		}
 	}
