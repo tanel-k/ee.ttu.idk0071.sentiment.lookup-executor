@@ -41,11 +41,11 @@
 								<td style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; margin: 0; padding: 0;">&#13;
 									<h3 style="font-family: 'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; line-height: 1.1; color: #2C3E50; font-weight: 500; font-size: 27px; margin: 0 0 15px; padding: 0;">Hi</h3>&#13;
 									<p style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 17px; line-height: 1.6; margin: 0 0 10px; padding: 0;color: #2C3E50;">&#13;
-										we are glad to say that Your lookup for <em>${entityName}</em> has completed!&#13;
+										Your lookup for <em>${entityName}</em> has completed!&#13;
 									</p>&#13;
 								 &#13;
 									<p style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 14px; line-height: 1.6; background-color: #ECF0F1; margin: 0 0 15px; padding: 15px; color: #2C3E50;">&#13;
-										You can see the results if You follow <a href="${baseURL}${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; font-weight: bold; margin: 0; padding: 0;">this link.</a>&#13;
+										You can see the results if you follow <a href="${baseURL}${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; font-weight: bold; margin: 0; padding: 0;">this link.</a>&#13;
 									</p>&#13;
 								 &#13;
 									<p style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 14px; line-height: 1.6; margin: 0 0 10px; padding: 0;"><a href="${baseURL}${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; margin: 0; padding: 0;">${baseURL}${lookupId}</a></p>&#13;
