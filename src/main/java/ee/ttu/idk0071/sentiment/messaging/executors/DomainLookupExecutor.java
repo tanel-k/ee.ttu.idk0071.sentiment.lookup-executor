@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.builders.QueryBuilder;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
+import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory.NoAvailableAnalyzersException;
 import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
@@ -101,7 +102,15 @@ public class DomainLookupExecutor {
 				return;
 			}
 			
-			SentimentAnalyzer analyzer = analyzerFactory.getAnalyzer();
+			SentimentAnalyzer analyzer;
+			try {
+				analyzer = analyzerFactory.getFirstAvailable();
+			} catch (NoAvailableAnalyzersException ex) {
+				// TODO log error
+				completeLookupWithError(domainLookup);
+				return;
+			}
+			
 			for (String text : searchResults) {
 				try {
 					switch (analyzer.getSentiment(text)) {

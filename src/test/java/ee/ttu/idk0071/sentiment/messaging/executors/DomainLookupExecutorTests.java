@@ -146,7 +146,7 @@ public class DomainLookupExecutorTests {
 		
 		Mockito.when(fetcherFactory.getFetcher(domainLookup.getDomain())).thenReturn(fetcher);
 		Mockito.when(fetcher.fetch(Mockito.any(Query.class))).thenReturn(fetchResults);
-		Mockito.when(analyzerFactory.getAnalyzer()).thenReturn(sentimentAnalyzer);
+		Mockito.when(analyzerFactory.getFirstAvailable()).thenReturn(sentimentAnalyzer);
 		Mockito.when(credentialFactory.forDomain(Mockito.any(Domain.class))).thenReturn(credentials);
 		
 		SentimentType firstSentiment = sentiments.get(0);
