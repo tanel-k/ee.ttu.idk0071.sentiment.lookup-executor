@@ -7,6 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
+import ee.ttu.idk0071.sentiment.lib.analysis.impl.TextProcessingComAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.impl.ViveknSentimentAnalyzer;
 
 @Component
@@ -15,6 +16,7 @@ public class AnalyzerFactory {
 
 	static {
 		ANALYZER_CLASS_POOL.add(ViveknSentimentAnalyzer.class);
+		ANALYZER_CLASS_POOL.add(TextProcessingComAnalyzer.class);
 	}
 
 	public static class NoAvailableAnalyzersException extends Exception {
