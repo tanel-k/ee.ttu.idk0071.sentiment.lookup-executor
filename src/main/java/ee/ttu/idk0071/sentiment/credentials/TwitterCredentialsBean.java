@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix="domains.twitter.credentials")
-public class TwitterCredentials {
+public class TwitterCredentialsBean {
 	private String consumerKey;
 	private String consumerSecret;
 	private String accessToken;
