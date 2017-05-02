@@ -1,5 +1,6 @@
 package ee.ttu.idk0071.sentiment.messaging.executors;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,6 +150,7 @@ public class DomainLookupExecutor {
 	}
 
 	private void completeLookup(DomainLookup domainLookup) {
+		domainLookup.setDateCompleted(new Date());
 		terminateWithState(domainLookup, DomainLookup.STATE_CODE_COMPLETE);
 	}
 
