@@ -6,4 +6,5 @@ public class DomainConsts {
 	public static final String DOMAIN_NAME_BING = "Bing";
 	public static final String DOMAIN_NAME_YAHOO = "Yahoo";
 	public static final String DOMAIN_NAME_GOOGLE = "Google";
+	public static final String DOMAIN_NAME_4CHAN = "4chan";
 }
