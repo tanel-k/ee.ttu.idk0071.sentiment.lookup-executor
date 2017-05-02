@@ -150,7 +150,7 @@ public class DomainLookupExecutor {
 	}
 
 	private void completeLookup(DomainLookup domainLookup) {
-		domainLookup.setDateCompleted(new Date());
+		domainLookup.setCompletedDate(new Date());
 		terminateWithState(domainLookup, DomainLookup.STATE_CODE_COMPLETE);
 	}
 
