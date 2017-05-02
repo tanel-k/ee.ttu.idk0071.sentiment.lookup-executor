@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import ee.ttu.idk0071.sentiment.builders.QueryBuilder;
+import ee.ttu.idk0071.sentiment.consts.EnvKeys;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory.NoAvailableAnalyzersException;
 import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
@@ -46,8 +47,6 @@ public class DomainLookupExecutor {
 	private String senderAddress;
 	@Value("${lookups.notifications.sender-name}")
 	private String senderName;
-	@Value("${deployment.urls.lookup-detail-base-url}")
-	private String lookupDetailBaseURL;
 
 	@Autowired
 	private DomainLookupStateRepository domainLookupStateRepository;
@@ -192,7 +191,7 @@ public class DomainLookupExecutor {
 		Map<String, Object> context = new HashMap<>();
 		context.put(CONTEXT_KEY_ENTITY_NAME, lookup.getLookupEntity().getName());
 		context.put(CONTEXT_KEY_LOOKUP_ID, String.valueOf(lookup.getId()));
-		context.put(CONTEXT_KEY_BASE_URL, lookupDetailBaseURL);
+		context.put(CONTEXT_KEY_BASE_URL, System.getenv(EnvKeys.KEY_WEBAPP_URL));
 		
 		mailService.sendEmailTemplate(mailModel, COMPLETION_EMAIL_TEMPLATE, context);
 	}

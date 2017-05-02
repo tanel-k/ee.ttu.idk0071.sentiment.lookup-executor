@@ -45,10 +45,10 @@
 									</p>&#13;
 								 &#13;
 									<p style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 14px; line-height: 1.6; background-color: #ECF0F1; margin: 0 0 15px; padding: 15px; color: #2C3E50;">&#13;
-										You can see the results if you follow <a href="${baseURL}${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; font-weight: bold; margin: 0; padding: 0;">this link.</a>&#13;
+										You can see the results if you follow <a href="${baseURL}/#/lookups/${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; font-weight: bold; margin: 0; padding: 0;">this link.</a>&#13;
 									</p>&#13;
 								 &#13;
-									<p style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 14px; line-height: 1.6; margin: 0 0 10px; padding: 0;"><a href="${baseURL}${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; margin: 0; padding: 0;">${baseURL}${lookupId}</a></p>&#13;
+									<p style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-weight: normal; font-size: 14px; line-height: 1.6; margin: 0 0 10px; padding: 0;"><a href="${baseURL}/#/lookups/${lookupId}" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; color: #18BC9C; margin: 0; padding: 0;">${baseURL}/#/lookups/${lookupId}</a></p>&#13;
 &#13;
 								 &#13;
 									<table width="100%" style="font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; width: 100%; background-color: #ECF0F1; margin: 0; padding: 0;" bgcolor="#ECF0F1">&#13;
