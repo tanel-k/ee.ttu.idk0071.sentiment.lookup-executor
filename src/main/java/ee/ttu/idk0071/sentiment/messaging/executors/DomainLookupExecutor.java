@@ -20,6 +20,7 @@ import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory.FetcherConstructionException;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
+import ee.ttu.idk0071.sentiment.lib.errorHandling.ErrorService;
 import ee.ttu.idk0071.sentiment.lib.fetching.api.Fetcher;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.FetchException;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.Query;
@@ -41,6 +42,8 @@ public class DomainLookupExecutor {
 	private static final String CONTEXT_KEY_BASE_URL = "baseURL";
 	private static final String CONTEXT_KEY_LOOKUP_ID = "lookupId";
 	private static final String CONTEXT_KEY_ENTITY_NAME = "entityName";
+	
+	private static final String CLASS_NAME = DomainLookupExecutor.class.getName();
 
 	@Value("${domain-lookups.max-results}")
 	private long maxResults;
@@ -58,6 +61,9 @@ public class DomainLookupExecutor {
 	public MailService mailService;
 
 	@Autowired
+	public ErrorService errorService;
+	
+	@Autowired
 	private FetcherFactory fetcherFactory;
 	@Autowired
 	private CredentialFactory credentialFactory;
@@ -71,7 +77,7 @@ public class DomainLookupExecutor {
 		try {
 			performLookup(domainLookup);
 		} catch (Throwable t) {
-			// TODO log error
+			errorService.saveError(t, CLASS_NAME);
 			completeLookupWithError(domainLookup);
 		}
 	}
@@ -92,7 +98,7 @@ public class DomainLookupExecutor {
 		try {
 			fetcher = fetcherFactory.getFetcher(domain);
 		} catch (FetcherConstructionException e) {
-			// TODO: log error
+			errorService.saveError(e, CLASS_NAME);
 		}
 		
 		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
@@ -103,7 +109,7 @@ public class DomainLookupExecutor {
 			try {
 				searchResults = fetcher.fetch(query);
 			} catch (FetchException ex) {
-				// TODO log error
+				errorService.saveError(ex, CLASS_NAME);
 				completeLookupWithError(domainLookup);
 				return;
 			}
@@ -112,7 +118,7 @@ public class DomainLookupExecutor {
 			try {
 				analyzer = analyzerFactory.getFirstAvailable();
 			} catch (NoAvailableAnalyzersException ex) {
-				// TODO log error
+				errorService.saveError(ex, CLASS_NAME);
 				completeLookupWithError(domainLookup);
 				return;
 			}
@@ -133,7 +139,7 @@ public class DomainLookupExecutor {
 							break;
 					}
 				} catch (SentimentRetrievalException ex) {
-					// TODO log error
+					errorService.saveError(ex, CLASS_NAME);
 					continue;
 				}
 			}
