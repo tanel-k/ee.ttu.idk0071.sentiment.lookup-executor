@@ -17,6 +17,7 @@ import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory;
 import ee.ttu.idk0071.sentiment.factories.AnalyzerFactory.NoAvailableAnalyzersException;
 import ee.ttu.idk0071.sentiment.factories.CredentialFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
+import ee.ttu.idk0071.sentiment.factories.FetcherFactory.FetcherConstructionException;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
 import ee.ttu.idk0071.sentiment.lib.fetching.api.Fetcher;
@@ -87,7 +88,12 @@ public class DomainLookupExecutor {
 		Lookup lookup = domainLookup.getLookup();
 		LookupEntity lookupEntity = lookup.getLookupEntity();
 		String queryString = lookupEntity.getName();
-		Fetcher fetcher = fetcherFactory.getFetcher(domain);
+		Fetcher fetcher = null;
+		try {
+			fetcher = fetcherFactory.getFetcher(domain);
+		} catch (FetcherConstructionException e) {
+			// TODO: log error
+		}
 		
 		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
 		if (fetcher != null) {

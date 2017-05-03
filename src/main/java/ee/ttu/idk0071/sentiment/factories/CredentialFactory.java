@@ -21,9 +21,9 @@ public class CredentialFactory {
 	private FourChanCredentialsBean fourChanCredentials;
 
 	public Credentials forDomain(Domain domain) {
-		if (DomainConsts.DOMAIN_NAME_TWITTER.equals(domain.getName())) {
+		if (DomainConsts.DOMAIN_CODE_TWITTER.equals(domain.getCode())) {
 			return getCredentialsFromBean(twitterCredentials);
-		} else if (DomainConsts.DOMAIN_NAME_4CHAN.equals(domain.getName())) {
+		} else if (DomainConsts.DOMAIN_CODE_4CHAN.equals(domain.getCode())) {
 			return getCredentialsFromBean(fourChanCredentials);
 		}
 		

@@ -92,7 +92,7 @@ public class DomainLookupExecutorTests {
 	}
 
 	@Test
-	public void testNoFetcherCausesErrorState() {
+	public void testNoFetcherCausesErrorState() throws Exception {
 		DomainLookup domainLookup = getMockDomainLookup();
 		Mockito.when(fetcherFactory.getFetcher(domainLookup.getDomain())).thenReturn(null);
 		
