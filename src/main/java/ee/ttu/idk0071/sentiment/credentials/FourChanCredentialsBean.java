@@ -1,11 +1,13 @@
 package ee.ttu.idk0071.sentiment.credentials;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix="domains.4chan.credentials")
 public class FourChanCredentialsBean {
+	@Value("${domains.4chan.credentials.google-4chan-cse-key}")
 	private String google4chanCseKey;
 	private String googleApiKey;
 
