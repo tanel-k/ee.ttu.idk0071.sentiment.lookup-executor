@@ -32,6 +32,7 @@ import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
+import ee.ttu.idk0071.sentiment.services.LogService;
 import ee.ttu.idk0071.sentiment.services.MailService;
 import ee.ttu.idk0071.sentiment.services.objects.Mail;
 
@@ -54,6 +55,8 @@ public class DomainLookupExecutorTests {
 	private AnalyzerFactory analyzerFactory;
 	@Mock
 	private MailService mailService;
+	@Mock
+	private LogService logService;
 
 	private DomainLookupState errorState;
 	private DomainLookupState completeState;

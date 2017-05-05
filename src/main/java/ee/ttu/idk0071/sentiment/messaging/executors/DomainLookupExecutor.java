@@ -20,7 +20,6 @@ import ee.ttu.idk0071.sentiment.factories.FetcherFactory;
 import ee.ttu.idk0071.sentiment.factories.FetcherFactory.FetcherConstructionException;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentAnalyzer;
 import ee.ttu.idk0071.sentiment.lib.analysis.api.SentimentRetrievalException;
-import ee.ttu.idk0071.sentiment.lib.errorHandling.ErrorService;
 import ee.ttu.idk0071.sentiment.lib.fetching.api.Fetcher;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.FetchException;
 import ee.ttu.idk0071.sentiment.lib.fetching.objects.Query;
@@ -32,6 +31,7 @@ import ee.ttu.idk0071.sentiment.model.Lookup;
 import ee.ttu.idk0071.sentiment.model.LookupEntity;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupRepository;
 import ee.ttu.idk0071.sentiment.repository.DomainLookupStateRepository;
+import ee.ttu.idk0071.sentiment.services.LogService;
 import ee.ttu.idk0071.sentiment.services.MailService;
 import ee.ttu.idk0071.sentiment.services.objects.Mail;
 import ee.ttu.idk0071.sentiment.services.objects.MailParty;
@@ -42,8 +42,6 @@ public class DomainLookupExecutor {
 	private static final String CONTEXT_KEY_BASE_URL = "baseURL";
 	private static final String CONTEXT_KEY_LOOKUP_ID = "lookupId";
 	private static final String CONTEXT_KEY_ENTITY_NAME = "entityName";
-	
-	private static final String CLASS_NAME = DomainLookupExecutor.class.getName();
 
 	@Value("${domain-lookups.max-results}")
 	private long maxResults;
@@ -59,9 +57,8 @@ public class DomainLookupExecutor {
 
 	@Autowired
 	public MailService mailService;
-
 	@Autowired
-	public ErrorService errorService;
+	public LogService logService;
 	
 	@Autowired
 	private FetcherFactory fetcherFactory;
@@ -72,12 +69,15 @@ public class DomainLookupExecutor {
 
 	public void handleMessage(DomainLookupRequestMessage lookupRequest) throws FetchException {
 		DomainLookup domainLookup = domainLookupRepository.findOne(lookupRequest.getDomainLookupId());
-		setStateAndSave(domainLookup, DomainLookup.STATE_CODE_IN_PROGRESS);
+		if (domainLookup == null) {
+			// nothing to handle
+			return;
+		}
 		
 		try {
+			setStateAndSave(domainLookup, DomainLookup.STATE_CODE_IN_PROGRESS);
 			performLookup(domainLookup);
 		} catch (Throwable t) {
-			errorService.saveError(t, CLASS_NAME);
 			completeLookupWithError(domainLookup);
 		}
 	}
@@ -98,7 +98,7 @@ public class DomainLookupExecutor {
 		try {
 			fetcher = fetcherFactory.getFetcher(domain);
 		} catch (FetcherConstructionException e) {
-			errorService.saveError(e, CLASS_NAME);
+			logService.logError(e, getClass());
 		}
 		
 		long neutralCnt = 0, positiveCnt = 0, negativeCnt = 0;
@@ -109,8 +109,7 @@ public class DomainLookupExecutor {
 			try {
 				searchResults = fetcher.fetch(query);
 			} catch (FetchException ex) {
-				errorService.saveError(ex, CLASS_NAME);
-				completeLookupWithError(domainLookup);
+				completeLookupWithError(domainLookup, ex);
 				return;
 			}
 			
@@ -118,8 +117,7 @@ public class DomainLookupExecutor {
 			try {
 				analyzer = analyzerFactory.getFirstAvailable();
 			} catch (NoAvailableAnalyzersException ex) {
-				errorService.saveError(ex, CLASS_NAME);
-				completeLookupWithError(domainLookup);
+				completeLookupWithError(domainLookup, ex);
 				return;
 			}
 			
@@ -139,7 +137,7 @@ public class DomainLookupExecutor {
 							break;
 					}
 				} catch (SentimentRetrievalException ex) {
-					errorService.saveError(ex, CLASS_NAME);
+					logService.logError(ex, getClass());
 					continue;
 				}
 			}
@@ -163,6 +161,11 @@ public class DomainLookupExecutor {
 	private void completeLookup(DomainLookup domainLookup) {
 		domainLookup.setCompletedDate(new Date());
 		terminateWithState(domainLookup, DomainLookup.STATE_CODE_COMPLETE);
+	}
+
+	private void completeLookupWithError(DomainLookup domainLookup, Throwable t) {
+		logService.logError(t, getClass());
+		terminateWithState(domainLookup, DomainLookup.STATE_CODE_ERROR);
 	}
 
 	private void completeLookupWithError(DomainLookup domainLookup) {
